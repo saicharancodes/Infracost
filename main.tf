@@ -1,63 +1,45 @@
-resource "google_storage_bucket" "out_dlm_is" {
-  name                        = "out-dlm-is-${terraform.workspace}"
-  project                     = "network-tkoff-${terraform.workspace}"
-  location                    = "europe-west1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
+provider "google" {
+  region = "us-central1"
+  project = "test"
+}
+
+resource "google_compute_instance" "my_instance" {
+  zone = "us-central1-a"
+  name = "test"
+
+  machine_type = "n1-standard-16" # <<<<<<<<<< Try changing this to n1-standard-32 to compare the costs
+  network_interface {
+    network = "default"
+    access_config {}
+  }
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-9"
+    }
+  }
+
+  scheduling {
+    preemptible = true
+  }
+
+  guest_accelerator {
+    type = "nvidia-tesla-t4" # <<<<<<<<<< Try changing this to nvidia-tesla-p4 to compare the costs
+    count = 4
+  }
 
   labels = {
-    data-classification = "is"
-    pii_included        = "no"
-    crop_number         = "NA"
-    bucket_type         = "data"
-    data_container_name = "<>"
-  }
-
-  lifecycle_rule {
-    action {
-      type = "Delete"
-    }
-    condition {
-      age_in_days = 90
-    }
-  }
-
-  lifecycle_rule {
-    action {
-      type = "SetStorageClass"
-      storage_class = "NEARLINE"
-    }
-    condition {
-      age_in_days = 7
-    }
-  }
-
-   lifecycle_rule {
-    action {
-      type = "SetStorageClass"
-      storage_class = "COLDLINE"
-    }
-    condition {
-      age_in_days = 30
-    }
+    environment = "production"
+    service = "web-app"
   }
 }
 
-resource "google_storage_bucket_iam_member" "read_write_tf" {
-  bucket = google_storage_bucket.out_dlm_is.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:tf-${terraform.workspace}.iam.gserviceaccount.com"
-}
+resource "google_cloudfunctions_function" "my_function" {
+  runtime = "nodejs20"
+  name = "test"
+  available_memory_mb = 512
 
-resource "google_storage_bucket_iam_member" "read_write_ftp" {
-  bucket = google_storage_bucket.out_dlm_is.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:ftp-${terraform.workspace}.iam.gserviceaccount.com"
+  labels = {
+    environment = "Prod"
+  }
 }
-
-# Add Read Only Access Service Account Here
-#resource "google_storage_bucket_iam_member" "read_only" {
-#  bucket = google_storage_bucket.out_dlm_is.name
-#  role   = "roles/storage.objectViewer"
-#  member = "serviceAccount:<READ_ONLY_SERVICE_ACCOUNT>"
-#}
