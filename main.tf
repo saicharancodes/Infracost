@@ -13,23 +13,32 @@ resource "google_storage_bucket" "out_dlm_is" {
     data_container_name = "<>"
   }
 
-  versioning {
-    enabled = false #  Consider enabling versioning for data recovery purposes
-  }
-
   lifecycle_rule {
     action {
       type = "Delete"
     }
     condition {
-      age_in_days              = 90
-      storage_class            = ["NEARLINE", "COLDLINE"]
-      created_before           = null
-      custom_time_before       = null
-      days_since_custom_time = null
-      days_since_noncurrent_time = null
-      noncurrent_time_before   = null
-      num_newer_versions       = null
+      age_in_days = 90
+    }
+  }
+
+  lifecycle_rule {
+    action {
+      type = "SetStorageClass"
+      storage_class = "NEARLINE"
+    }
+    condition {
+      age_in_days = 7
+    }
+  }
+
+   lifecycle_rule {
+    action {
+      type = "SetStorageClass"
+      storage_class = "COLDLINE"
+    }
+    condition {
+      age_in_days = 30
     }
   }
 }
@@ -46,10 +55,9 @@ resource "google_storage_bucket_iam_member" "read_write_ftp" {
   member = "serviceAccount:ftp-${terraform.workspace}.iam.gserviceaccount.com"
 }
 
-# Add read only access for other service accounts here
-# Example
-# resource "google_storage_bucket_iam_member" "read_only_sa" {
-#   bucket = google_storage_bucket.out_dlm_is.name
-#   role   = "roles/storage.objectViewer"
-#   member = "serviceAccount:other-project-sa@other-project.iam.gserviceaccount.com"
-# }
+# Add Read Only Access Service Account Here
+#resource "google_storage_bucket_iam_member" "read_only" {
+#  bucket = google_storage_bucket.out_dlm_is.name
+#  role   = "roles/storage.objectViewer"
+#  member = "serviceAccount:<READ_ONLY_SERVICE_ACCOUNT>"
+#}
