@@ -1,10 +1,10 @@
 provider "google" {
-  region = "us-central1"
+  region = "us-east1"
   project = "test"
 }
 
 resource "google_compute_instance" "my_instance" {
-  zone = "us-central1-a"
+  zone = "us-east1-b"
   name = "test"
 
   machine_type = "n1-standard-16" # <<<<<<<<<< Try changing this to n1-standard-32 to compare the costs
