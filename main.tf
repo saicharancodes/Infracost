@@ -1,6 +1,6 @@
 resource "google_storage_bucket" "out_dlm_is" {
-  name                        = "out-dlm-is-${terraform.workspace}"
-  project                     = "network-tkoff-${terraform.workspace}"
+  name                        = "out-dlm-is-${var.environment}"
+  project                     = "network-tkoff-${var.environment}"
   location                    = "europe-west1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
@@ -14,50 +14,55 @@ resource "google_storage_bucket" "out_dlm_is" {
   }
 
   lifecycle_rule {
-    action {
-      type = "Delete"
-    }
     condition {
-      age_in_days = 90
+      age_in_days = 7
+      storage_class = "NEARLINE"
     }
-  }
-
-  lifecycle_rule {
     action {
       type = "SetStorageClass"
       storage_class = "NEARLINE"
     }
-    condition {
-      age_in_days = 7
-    }
   }
-
-   lifecycle_rule {
+    lifecycle_rule {
+    condition {
+      age_in_days = 30
+      storage_class = "COLDLINE"
+    }
     action {
       type = "SetStorageClass"
       storage_class = "COLDLINE"
     }
+  }
+    lifecycle_rule {
     condition {
-      age_in_days = 30
+      age_in_days = 90
+    }
+    action {
+      type = "Delete"
     }
   }
 }
 
-resource "google_storage_bucket_iam_member" "read_write_tf" {
+resource "google_storage_bucket_iam_binding" "read_write_access" {
   bucket = google_storage_bucket.out_dlm_is.name
   role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:tf-${terraform.workspace}.iam.gserviceaccount.com"
+  members = [
+    "serviceAccount:tf-${var.environment}.iam.gserviceaccount.com",
+    "serviceAccount:ftp-${var.environment}.iam.gserviceaccount.com",
+  ]
 }
 
-resource "google_storage_bucket_iam_member" "read_write_ftp" {
-  bucket = google_storage_bucket.out_dlm_is.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:ftp-${terraform.workspace}.iam.gserviceaccount.com"
-}
+# Add Read Only Access IAM binding here if needed
+# Example:
+# resource "google_storage_bucket_iam_binding" "read_only_access" {
+#   bucket = google_storage_bucket.out_dlm_is.name
+#   role   = "roles/storage.objectViewer"
+#   members = [
+#     "serviceAccount:your-read-only-service-account@your-project.iam.gserviceaccount.com",
+#   ]
+# }
 
-# Add Read Only Access Service Account Here
-#resource "google_storage_bucket_iam_member" "read_only" {
-#  bucket = google_storage_bucket.out_dlm_is.name
-#  role   = "roles/storage.objectViewer"
-#  member = "serviceAccount:<READ_ONLY_SERVICE_ACCOUNT>"
-#}
+variable "environment" {
+  type = string
+  description = "The environment (e.g., dev, prod)"
+}
