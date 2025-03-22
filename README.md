@@ -1,6 +1,6 @@
 # Infracost
 
-1) run the puthon script that contains gemini api that will genearte the terraform code and put that code in main.tf
+1) run the puthon script that contains gemini api that will genearte the terraform code and saves that code in main.tf
 
 2) Infracost setup (https://www.infracost.io/docs/)
 
