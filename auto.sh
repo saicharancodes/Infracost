@@ -3,6 +3,8 @@
 # Get the branch name
 BRANCH=$(git symbolic-ref --short HEAD)
 
+py gemini.py
+
 # Add all changes
 git add .
 
