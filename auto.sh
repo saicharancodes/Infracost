@@ -12,8 +12,10 @@ git commit -m "Auto commit at $(date)"
 # Push to remote
 git push origin $BRANCH
 
-# Check if GitHub CLI is installed
+echo "Checking for GitHub CLI availability..."
 if command -v gh &> /dev/null; then
+    echo "GitHub CLI found. Using it to manage PRs."
+    
     # Find and close any existing PRs from this branch
     EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number')
     
@@ -26,5 +28,14 @@ if command -v gh &> /dev/null; then
     echo "Creating new PR from $BRANCH to main"
     gh pr create --base main --head "$BRANCH" --title "Updated PR from $BRANCH" --body "This PR replaces any previous PR and contains the latest changes."
 else
-    echo "GitHub CLI not found. Install it to automate PR management: https://cli.github.com/"
+    echo "GitHub CLI not found. You'll need to manage PRs manually:"
+    echo "1. Go to your repository on GitHub.com"
+    echo "2. If there's an existing PR for branch '$BRANCH', close it"
+    echo "3. Create a new PR from '$BRANCH' to 'main'"
+    echo ""
+    echo "To install GitHub CLI for future automation:"
+    echo "- On Ubuntu/Debian: sudo apt install gh"
+    echo "- On macOS: brew install gh"
+    echo "- On Windows: winget install GitHub.cli"
+    echo "Then authenticate with: gh auth login"
 fi
