@@ -8,105 +8,132 @@ terraform {
   }
 }
 
-# Replace with your project ID
+# Set the project ID
 variable "project_id" {
   type = string
-  default = "your-project-id"
+  description = "The ID of the Google Cloud project"
 }
 
-# Environment variable
+# Set the environment
 variable "environment" {
   type = string
-  default = "dev"
+  description = "The environment (e.g., dev, prod)"
 }
 
-# GCS Bucket Name
+# Define the bucket name
 variable "bucket_name" {
   type = string
+  description = "The name of the GCS bucket"
   default = "out-dlm-is"
 }
 
-# Location for the GCS Bucket
+# Define the location
 variable "location" {
   type = string
+  description = "The location of the GCS bucket"
   default = "europe-west1"
 }
 
-# Service account for read/write access
-variable "read_write_service_accounts" {
-  type = list(string)
+# Define the storage class
+variable "storage_class" {
+  type = string
+  description = "The storage class of the GCS bucket"
+  default = "STANDARD"
+}
+
+# Define the lifecycle rules
+variable "lifecycle_rules" {
+  type = list(object({
+    age          = number
+    storage_class = string
+  }))
   default = [
-    "tf-${var.environment}.iam.gserviceaccount.com",
-    "ftp-${var.environment}.iam.gserviceaccount.com"
+    {
+      age          = 7
+      storage_class = "NEARLINE"
+    },
+    {
+      age          = 30
+      storage_class = "COLDLINE"
+    },
+    {
+      age          = 90
+      storage_class = "DELETE"
+    }
   ]
 }
 
-# Service account for read-only access
-variable "read_only_service_accounts" {
-  type = list(string)
-  default = []
-}
-
-# GCS Bucket Resource
-resource "google_storage_bucket" "bucket" {
-  name                        = "${var.bucket_name}-${var.environment}"
-  project                     = var.project_id
-  location                    = var.location
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
+# Define the labels
+variable "labels" {
+  type = map(string)
+  description = "The labels to apply to the GCS bucket"
+  default = {
     data-classification = "is"
     pii_included        = "no"
     crop_number         = "NA"
     bucket_type         = "data"
-    data_container_name = "<>"  # Replace with the actual container name
+    data_container_name = "<Specify the container name where the data is stored>"
   }
+}
+
+# Create the GCS bucket
+resource "google_storage_bucket" "bucket" {
+  name                        = "${var.bucket_name}-${var.environment}"
+  project                     = var.project_id
+  location                    = var.location
+  storage_class               = var.storage_class
+  uniform_bucket_level_access = true
 
   lifecycle_rule {
     condition {
-      age = 90
+      age = var.lifecycle_rules[0].age
+    }
+    action {
+      type          = "SetStorageClass"
+      storage_class = var.lifecycle_rules[0].storage_class
+    }
+  }
+  lifecycle_rule {
+    condition {
+      age = var.lifecycle_rules[1].age
+    }
+    action {
+      type          = "SetStorageClass"
+      storage_class = var.lifecycle_rules[1].storage_class
+    }
+  }
+   lifecycle_rule {
+    condition {
+      age = var.lifecycle_rules[2].age
     }
     action {
       type = "Delete"
     }
   }
 
-  lifecycle_rule {
-    condition {
-      age          = 7
-      storage_class = ["STANDARD"]
-    }
-    action {
-      type          = "SetStorageClass"
-      storage_class = "NEARLINE"
-    }
-  }
-
-    lifecycle_rule {
-    condition {
-      age          = 30
-      storage_class = ["NEARLINE"]
-    }
-    action {
-      type          = "SetStorageClass"
-      storage_class = "COLDLINE"
-    }
-  }
+  labels = merge(var.labels, {
+    environment = var.environment
+  })
 }
 
-# Grant read/write access to the specified service accounts
-resource "google_storage_bucket_iam_member" "read_write_access" {
-  for_each = toset(var.read_write_service_accounts)
-  bucket   = google_storage_bucket.bucket.name
-  role     = "roles/storage.objectAdmin"
-  member   = "serviceAccount:${each.value}"
+# Grant Read/Write access to tf-<env>.iam.gserviceaccount.com
+resource "google_storage_bucket_iam_member" "read_write_tf" {
+  bucket = google_storage_bucket.bucket.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:tf-${var.environment}.iam.gserviceaccount.com"
 }
 
-# Grant read-only access to the specified service accounts
-resource "google_storage_bucket_iam_member" "read_only_access" {
-  for_each = toset(var.read_only_service_accounts)
-  bucket   = google_storage_bucket.bucket.name
-  role     = "roles/storage.objectViewer"
-  member   = "serviceAccount:${each.value}"
+# Grant Read/Write access to ftp-<env>.iam.gserviceaccount.com
+resource "google_storage_bucket_iam_member" "read_write_ftp" {
+  bucket = google_storage_bucket.bucket.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:ftp-${var.environment}.iam.gserviceaccount.com"
 }
+
+# Grant Read Only access to <please specify which service account should have Read Only access, please highlight if it's another project Service Account>
+# Example:
+# resource "google_storage_bucket_iam_member" "read_only" {
+#   bucket = google_storage_bucket.bucket.name
+#   role   = "roles/storage.objectViewer"
+#   member = "serviceAccount:your-service-account@your-project.iam.gserviceaccount.com"
+# }

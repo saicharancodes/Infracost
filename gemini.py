@@ -92,5 +92,16 @@ Expected go live date: December
     
     print("\n\nGenerated Terraform code has been saved to main.tf")
 
+    import subprocess
+    import os
+
+    # Change to the directory containing your script if needed
+    script_dir = r"C:/Users/stu108/Downloads/Infracost"
+    os.chdir(script_dir)
+
+    # Execute the script
+    subprocess.run(["wsl", "sh", "./auto.sh"], check=True)
+
 if __name__ == "__main__":
     generate()
+ 
