@@ -1,75 +1,42 @@
-resource "google_storage_bucket" "out_dlm_is" {
-  name                        = "out-dlm-is-${var.environment}"
-  project                     = "network-tkoff-${var.environment}"
-  location                    = "europe-west1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
-    data-classification = "is"
-    pii_included        = "no"
-    crop_number         = "NA"
-    bucket_type         = "data"
-  }
-}
-
-resource "google_storage_bucket_iam_binding" "read_write_access" {
-  bucket = google_storage_bucket.out_dlm_is.name
-  role   = "roles/storage.objectAdmin"
-  members = [
-    "serviceAccount:tf-${var.environment}.iam.gserviceaccount.com",
-    "serviceAccount:ftp-${var.environment}.iam.gserviceaccount.com",
-  ]
-}
-
-resource "google_storage_bucket_iam_binding" "read_only_access" {
-  bucket = google_storage_bucket.out_dlm_is.name
-  role   = "roles/storage.objectViewer"
-  members = [
-    "serviceAccount:${var.read_only_service_account}",
-  ]
-  count = var.read_only_service_account != "" ? 1 : 0
-}
-
-
-resource "google_storage_bucket_lifecycle_rule" "lifecycle_rules" {
-  bucket = google_storage_bucket.out_dlm_is.name
-
-  rule {
-    action {
-      type = "Delete"
-    }
-    condition {
-      age_in_days = 120
-    }
-  }
-  rule {
-    action {
-      type = "SetStorageClass"
-      storage_class = "NEARLINE"
-    }
-    condition {
-      age_in_days = 14
-    }
-  }
-   rule {
-    action {
-      type = "SetStorageClass"
-      storage_class = "COLDLINE"
-    }
-    condition {
-      age_in_days = 90
+# Configure the Google Cloud Provider
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
     }
   }
 }
 
-variable "environment" {
-  type        = string
-  description = "The environment (e.g., dev, prod)"
+provider "google" {
+  project = "<YOUR_PROJECT_ID>" # Replace with your GCP Project ID
+  region  = "us-central1"        # Default Region
 }
 
-variable "read_only_service_account" {
-  type        = string
-  description = "Service account with read-only access (optional)"
-  default     = ""
+# Create a Google Cloud Storage Bucket
+resource "google_storage_bucket" "default_bucket" {
+  name          = "<YOUR_BUCKET_NAME>" # Replace with your desired bucket name (must be globally unique)
+  location      = "US"               # Default Location
+  force_destroy = true             # Allows Terraform to delete the bucket even if it contains objects
+}
+
+# Create a Google Compute Engine instance (VM)
+resource "google_compute_instance" "default_vm" {
+  name         = "default-vm"
+  machine_type = "e2-medium" #default machine size
+  zone         = "us-central1-a" #default zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11" # Default OS image
+    }
+  }
+
+  network_interface {
+    network = "default" #default network
+
+    access_config {
+      # Include this section to give the VM a public IP address
+    }
+  }
 }
