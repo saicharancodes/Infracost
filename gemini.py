@@ -42,7 +42,7 @@ Item	Value
 Name	out-dlm-is-<env>
 Location	europe-west1
 Storage Class	STANDARD
-Life Cycle Rules	nearline_7_coldline_30_delete_90
+Life Cycle Rules	nearline_14_coldline_90_delete_120
 Labels:	 
 data-classification	is
 pii_included	no
