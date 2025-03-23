@@ -9,34 +9,33 @@ terraform {
 }
 
 provider "google" {
-  project = "<YOUR_PROJECT_ID>" # Replace with your GCP Project ID
-  region  = "us-central1"        # Default Region
+  project = "<YOUR_PROJECT_ID>" # Replace with your GCP project ID
+  region  = "us-central1"      # Replace with your desired region
 }
 
 # Create a Google Cloud Storage Bucket
-resource "google_storage_bucket" "default_bucket" {
-  name          = "<YOUR_BUCKET_NAME>" # Replace with your desired bucket name (must be globally unique)
-  location      = "US"               # Default Location
-  force_destroy = true             # Allows Terraform to delete the bucket even if it contains objects
+resource "google_storage_bucket" "default" {
+  name          = "<YOUR_BUCKET_NAME>" # Replace with a unique bucket name
+  location      = "US"
+  force_destroy = true # Allows deletion of non-empty buckets
+
+  # Optional: Set bucket policy if needed
+  # uniform_bucket_level_access = true 
 }
 
 # Create a Google Compute Engine instance (VM)
-resource "google_compute_instance" "default_vm" {
+resource "google_compute_instance" "default" {
   name         = "default-vm"
-  machine_type = "e2-medium" #default machine size
-  zone         = "us-central1-a" #default zone
+  machine_type = "e2-medium"
+  zone         = "us-central1-a"
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-11" # Default OS image
+      image = "debian-cloud/debian-11"
     }
   }
 
   network_interface {
-    network = "default" #default network
-
-    access_config {
-      # Include this section to give the VM a public IP address
-    }
+    network = "default" # Use the default VPC network
   }
 }
