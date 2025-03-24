@@ -10,20 +10,18 @@ terraform {
 
 provider "google" {
   project = "<YOUR_PROJECT_ID>" # Replace with your GCP project ID
-  region  = "us-central1"      # Replace with your desired region
+  region  = "us-central1"       # Replace with your desired region
 }
+
 
 # Create a Google Cloud Storage Bucket
 resource "google_storage_bucket" "default" {
   name          = "<YOUR_BUCKET_NAME>" # Replace with a unique bucket name
   location      = "US"
   force_destroy = true # Allows deletion of non-empty buckets
-
-  # Optional: Set bucket policy if needed
-  # uniform_bucket_level_access = true 
 }
 
-# Create a Google Compute Engine instance (VM)
+# Create a Google Compute Engine Instance (VM)
 resource "google_compute_instance" "default" {
   name         = "default-vm"
   machine_type = "e2-medium"
@@ -37,5 +35,6 @@ resource "google_compute_instance" "default" {
 
   network_interface {
     network = "default" # Use the default VPC network
+    access_config {}    # Create a default external IP
   }
 }
