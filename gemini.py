@@ -13,77 +13,7 @@ def generate():
         types.Content(
             role="user",
             parts=[
-                types.Part.from_text(text=""" Read before creating your first ticket:
-
-Task/Incident description: 
-
-Please create bucket   out-dlm-is-<env> with the following details:-
-
-Project: network-tkoff-<env>
-
-Environments Affected: all
-
-SM and Squad who need the ticket:  Har
-
-Item
-
-Value
-
-Name
-
-out-dlm-is-<env>
-
-Location
-
-europe-west1
-
-Storage Class
-
-STANDARD
-
-Life Cycle Rules
-
-nearline_7_coldline_30_delete_90
-
-Labels:
-
- 
-
-data-classification
-
-is
-
-pii_included
-
-no
-
-crop_number
-
-NA
-
-bucket_type
-
-data
-
-data_container_name
-
-Specify the container name where the data is stored - <>
-
-Read/Write Access
-
-tf-<env>.iam.gserviceaccount.com
-ftp-<enviam.gserviceaccount.com
-
-Read Only Access
-
-<please specify which service account should have Read Only access, please highlight if it's another project Service Account>
-
-Impact: will not be able to create the extracts for Openreach reports.
-
-Blocker: yes
-
-Expected go live date: December
-
+                types.Part.from_text(text="""  create a vm and bucket in gcp 
 """),
             ],
         ),
