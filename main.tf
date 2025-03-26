@@ -1,63 +1,54 @@
-resource "google_storage_bucket" "out_dlm_is" {
-  name                        = "out-dlm-is-${terraform.workspace}"
-  project                     = "network-tkoff-${terraform.workspace}"
-  location                    = "europe-west1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-
-  labels = {
-    data-classification = "is"
-    pii_included        = "no"
-    crop_number         = "NA"
-    bucket_type         = "data"
-    data_container_name = "<>"
-  }
-
-  lifecycle_rule {
-    action {
-      type = "Delete"
-    }
-    condition {
-      age_in_days = 90
-    }
-  }
-
-  lifecycle_rule {
-    action {
-      type = "SetStorageClass"
-      storage_class = "NEARLINE"
-    }
-    condition {
-      age_in_days = 7
-    }
-  }
-
-   lifecycle_rule {
-    action {
-      type = "SetStorageClass"
-      storage_class = "COLDLINE"
-    }
-    condition {
-      age_in_days = 30
+# Configure the Google Cloud provider
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 4.0"
     }
   }
 }
 
-resource "google_storage_bucket_iam_member" "read_write_tf" {
-  bucket = google_storage_bucket.out_dlm_is.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:tf-${terraform.workspace}.iam.gserviceaccount.com"
+provider "google" {
+  project = "your-project-id" # Replace with your GCP project ID
+  region  = "us-central1"      # Replace with your desired region
 }
 
-resource "google_storage_bucket_iam_member" "read_write_ftp" {
-  bucket = google_storage_bucket.out_dlm_is.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:ftp-${terraform.workspace}.iam.gserviceaccount.com"
+# Create a Google Cloud Storage bucket
+resource "google_storage_bucket" "bucket" {
+  name          = "your-unique-bucket-name" # Replace with a unique bucket name
+  location      = "US"
+  force_destroy = true
+
+  storage_class = "STANDARD"
+  versioning {
+    enabled = true
+  }
 }
 
-# Add Read Only Access Service Account Here
-#resource "google_storage_bucket_iam_member" "read_only" {
-#  bucket = google_storage_bucket.out_dlm_is.name
-#  role   = "roles/storage.objectViewer"
-#  member = "serviceAccount:<READ_ONLY_SERVICE_ACCOUNT>"
-#}
+# Create a Google Compute Engine instance (VM)
+resource "google_compute_instance" "vm_instance" {
+  name         = "terraform-instance"
+  machine_type = "e2-medium"
+  zone         = "us-central1-a"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11"
+      size_gb = 50
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {
+      // Include this section to give the VM a public IP address
+    }
+  }
+
+  metadata_startup_script = "sudo apt-get update && sudo apt-get install -y nginx"
+
+  service_account {
+    scopes = ["cloud-platform"]
+  }
+
+}
