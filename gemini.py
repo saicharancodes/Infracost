@@ -5,7 +5,7 @@ from google.genai import types
 
 def generate():
     client = genai.Client(
-        api_key="AIzaSyAywz4tcNXJBVKDlt8wMUeKsU-_D57FWks",  # Replace with your actual API key
+        api_key="",  # Replace with your actual API key
     )
 
     model = "gemini-2.0-flash"
@@ -93,4 +93,5 @@ Expected go live date: December
     print("\n\nGenerated Terraform code has been saved to main.tf")
 
 if __name__ == "__main__":
+
     generate()
